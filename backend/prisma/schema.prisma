@@ -1,0 +1,351 @@
+// Prisma schema for Donor Investment Oversight Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  Admin
+  ProjectManager
+  Finance
+  CommitteeMember
+  Auditor
+  Viewer
+}
+
+enum ActivityStatus {
+  Planned
+  InProgress
+  OnHold
+  Completed
+  Cancelled
+}
+
+enum ApprovalState {
+  Draft
+  Submitted
+  FinanceApproved
+  CommitteeApproved
+  Rejected
+}
+
+enum ApprovalTargetType {
+  EstimateChange
+  ActualEntry
+  StatusChange
+}
+
+enum ActualType {
+  Committed
+  Disbursed
+  Spent
+}
+
+enum AttachmentCategory {
+  Proposal
+  Invoice
+  Report
+  Photo
+  Other
+}
+
+enum AuditAction {
+  Create
+  Update
+  Delete
+  SoftDelete
+  Restore
+  Reopen
+  Approve
+  Reject
+  Import
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  fullName     String    @map("full_name")
+  role         UserRole
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  lastLoginAt  DateTime? @map("last_login_at")
+
+  // Relations
+  createdObjectives        InvestmentObjective[] @relation("ObjectiveCreatedBy")
+  updatedObjectives        InvestmentObjective[] @relation("ObjectiveUpdatedBy")
+  createdActivities        Activity[]            @relation("ActivityCreatedBy")
+  updatedActivities        Activity[]            @relation("ActivityUpdatedBy")
+  lockedActivities         Activity[]            @relation("ActivityLockedBy")
+  createdActuals           Actual[]              @relation("ActualCreatedBy")
+  updatedActuals           Actual[]              @relation("ActualUpdatedBy")
+  submittedApprovals       Approval[]            @relation("ApprovalSubmittedBy")
+  financeApprovals         Approval[]            @relation("ApprovalFinanceApprovedBy")
+  committeeApprovals       Approval[]            @relation("ApprovalCommitteeApprovedBy")
+  rejectedApprovals        Approval[]            @relation("ApprovalRejectedBy")
+  uploadedAttachments      Attachment[]          @relation("AttachmentUploadedBy")
+  auditLogs                AuditLog[]            @relation("AuditLogActor")
+  notifications            Notification[]
+  notificationPreferences  NotificationPreference?
+  updatedSystemSettings    SystemSetting[]
+  comments                 Comment[]             @relation("CommentAuthor")
+
+  @@index([email])
+  @@index([role, isActive])
+  @@map("users")
+}
+
+model InvestmentObjective {
+  id                       String    @id @default(uuid())
+  sn                       Int       @default(autoincrement())
+  title                    String
+  shortDescription         String?   @map("short_description") @db.Text
+  longDescription          String?   @map("long_description") @db.Text
+  states                   String[]
+  regions                  String[]
+  tags                     String[]
+  overallStartYear         Int       @map("overall_start_year")
+  overallEndYear           Int       @map("overall_end_year")
+  status                   String    @default("Active")
+  computedEstimatedSpendUsd Decimal  @default(0) @map("computed_estimated_spend_usd") @db.Decimal(15, 2)
+  createdById              String?   @map("created_by")
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedById              String?   @map("updated_by")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+  deletedAt                DateTime? @map("deleted_at")
+
+  // Relations
+  createdBy  User?      @relation("ObjectiveCreatedBy", fields: [createdById], references: [id])
+  updatedBy  User?      @relation("ObjectiveUpdatedBy", fields: [updatedById], references: [id])
+  activities Activity[]
+
+  @@index([sn])
+  @@index([status, deletedAt])
+  @@index([regions, deletedAt])
+  @@index([overallStartYear, overallEndYear])
+  @@index([deletedAt])
+  @@map("investment_objectives")
+}
+
+model Activity {
+  id                     String         @id @default(uuid())
+  investmentObjectiveId  String         @map("investment_objective_id")
+  sn                     Int            @default(autoincrement())
+  title                  String
+  descriptionAndObjective String?       @map("description_and_objective") @db.Text
+  startDate              DateTime       @map("start_date") @db.Date
+  endDate                DateTime       @map("end_date") @db.Date
+  status                 ActivityStatus @default(Planned)
+  progressPercent        Int            @default(0) @map("progress_percent")
+  lead                   String?
+  estimatedSpendUsdTotal Decimal        @default(0) @map("estimated_spend_usd_total") @db.Decimal(15, 2)
+  actualSpendUsdTotal    Decimal        @default(0) @map("actual_spend_usd_total") @db.Decimal(15, 2)
+  annualEstimates        Json           @default("{}") @map("annual_estimates")
+  riskRating             String?        @map("risk_rating")
+  priority               String?
+  createdById            String?        @map("created_by")
+  createdAt              DateTime       @default(now()) @map("created_at")
+  updatedById            String?        @map("updated_by")
+  updatedAt              DateTime       @updatedAt @map("updated_at")
+  deletedAt              DateTime?      @map("deleted_at")
+  lockedById             String?        @map("locked_by")
+  lockedAt               DateTime?      @map("locked_at")
+
+  // Relations
+  investmentObjective InvestmentObjective @relation(fields: [investmentObjectiveId], references: [id], onDelete: Cascade)
+  createdBy           User?               @relation("ActivityCreatedBy", fields: [createdById], references: [id])
+  updatedBy           User?               @relation("ActivityUpdatedBy", fields: [updatedById], references: [id])
+  lockedBy            User?               @relation("ActivityLockedBy", fields: [lockedById], references: [id])
+  actuals             Actual[]
+  comments            Comment[]
+
+  @@index([investmentObjectiveId, deletedAt])
+  @@index([status, deletedAt])
+  @@index([lead, deletedAt])
+  @@index([startDate, endDate])
+  @@index([lockedById, lockedAt])
+  @@map("activities")
+}
+
+model Actual {
+  id          String    @id @default(uuid())
+  activityId  String    @map("activity_id")
+  entryDate   DateTime  @map("entry_date") @db.Date
+  amountUsd   Decimal   @map("amount_usd") @db.Decimal(15, 2)
+  category    String    @db.VarChar(100)
+  description String?   @db.Text
+  createdById String    @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedById String?   @map("updated_by")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  activity    Activity     @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  createdBy   User         @relation("ActualCreatedBy", fields: [createdById], references: [id])
+  updatedBy   User?        @relation("ActualUpdatedBy", fields: [updatedById], references: [id])
+  attachments Attachment[]
+
+  @@index([activityId, deletedAt])
+  @@index([entryDate])
+  @@index([category])
+  @@map("actuals")
+}
+
+model Approval {
+  id                    String             @id @default(uuid())
+  targetType            ApprovalTargetType @map("target_type")
+  targetId              String             @map("target_id")
+  currentState          ApprovalState      @default(Draft) @map("current_state")
+  submittedById         String?            @map("submitted_by")
+  submittedAt           DateTime?          @map("submitted_at")
+  financeApprovedById   String?            @map("finance_approved_by")
+  financeApprovedAt     DateTime?          @map("finance_approved_at")
+  financeComment        String?            @map("finance_comment") @db.Text
+  committeeApprovedById String?            @map("committee_approved_by")
+  committeeApprovedAt   DateTime?          @map("committee_approved_at")
+  committeeComment      String?            @map("committee_comment") @db.Text
+  rejectedById          String?            @map("rejected_by")
+  rejectedAt            DateTime?          @map("rejected_at")
+  rejectionReason       String?            @map("rejection_reason") @db.Text
+  history               Json               @default("[]")
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  submittedBy         User? @relation("ApprovalSubmittedBy", fields: [submittedById], references: [id])
+  financeApprovedBy   User? @relation("ApprovalFinanceApprovedBy", fields: [financeApprovedById], references: [id])
+  committeeApprovedBy User? @relation("ApprovalCommitteeApprovedBy", fields: [committeeApprovedById], references: [id])
+  rejectedBy          User? @relation("ApprovalRejectedBy", fields: [rejectedById], references: [id])
+
+  @@index([targetType, targetId])
+  @@index([currentState])
+  @@index([submittedById, submittedAt])
+  @@map("approvals")
+}
+
+model Attachment {
+  id                 String    @id @default(uuid())
+  actualId           String?   @map("actual_id")
+  fileName           String    @map("file_name") @db.VarChar(255)
+  originalFileName   String    @map("original_file_name") @db.VarChar(255)
+  fileSize           Int       @map("file_size")
+  mimeType           String    @map("mime_type") @db.VarChar(100)
+  storageKey         String    @map("storage_key") @db.VarChar(500)
+  virusScanStatus    String    @default("Pending") @map("virus_scan_status")
+  virusScanResult    String?   @map("virus_scan_result") @db.Text
+  uploadedById       String    @map("uploaded_by")
+  uploadedAt         DateTime  @default(now()) @map("uploaded_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  // Relations
+  actual     Actual? @relation(fields: [actualId], references: [id])
+  uploadedBy User    @relation("AttachmentUploadedBy", fields: [uploadedById], references: [id])
+
+  @@index([actualId, deletedAt])
+  @@index([virusScanStatus])
+  @@map("attachments")
+}
+
+model AuditLog {
+  id             String      @id @default(uuid())
+  actorId        String?     @map("actor_id")
+  actorRole      UserRole?   @map("actor_role")
+  action         AuditAction
+  objectType     String      @map("object_type")
+  objectId       String      @map("object_id")
+  timestamp      DateTime    @default(now())
+  previousValues Json?       @map("previous_values")
+  newValues      Json?       @map("new_values")
+  comment        String?     @db.Text
+  ipAddress      String?     @map("ip_address")
+
+  // Relations
+  actor User? @relation("AuditLogActor", fields: [actorId], references: [id])
+
+  @@index([objectType, objectId])
+  @@index([timestamp(sort: Desc)])
+  @@index([actorId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  type        String
+  title       String
+  message     String   @db.Text
+  link        String?
+  isRead      Boolean  @default(false) @map("is_read")
+  isEmailSent Boolean  @default(false) @map("is_email_sent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@index([type])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id                      String   @id @default(uuid())
+  userId                  String   @unique @map("user_id")
+  emailApprovalSubmitted  Boolean  @default(true) @map("email_approval_submitted")
+  emailApprovalDecision   Boolean  @default(true) @map("email_approval_decision")
+  emailVarianceAlert      Boolean  @default(true) @map("email_variance_alert")
+  emailImportComplete     Boolean  @default(true) @map("email_import_complete")
+  inappApprovalSubmitted  Boolean  @default(true) @map("inapp_approval_submitted")
+  inappApprovalDecision   Boolean  @default(true) @map("inapp_approval_decision")
+  inappVarianceAlert      Boolean  @default(true) @map("inapp_variance_alert")
+  inappImportComplete     Boolean  @default(true) @map("inapp_import_complete")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model SystemSetting {
+  key         String   @id
+  value       Json
+  description String?  @db.Text
+  updatedById String?  @map("updated_by")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  updatedBy User? @relation(fields: [updatedById], references: [id])
+
+  @@map("system_settings")
+}
+
+model Comment {
+  id         String    @id @default(uuid())
+  activityId String    @map("activity_id")
+  userId     String    @map("user_id")
+  parentId   String?   @map("parent_id")
+  content    String    @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  // Relations
+  activity Activity  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user     User      @relation("CommentAuthor", fields: [userId], references: [id])
+  parent   Comment?  @relation("ThreadedComments", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("ThreadedComments")
+
+  @@index([activityId, deletedAt])
+  @@index([userId])
+  @@index([parentId])
+  @@map("comments")
+}
