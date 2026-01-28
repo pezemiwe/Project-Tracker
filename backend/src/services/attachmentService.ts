@@ -1,21 +1,22 @@
-import { Client } from 'minio';
-import NodeClam from 'clamscan';
-import { prisma } from '../utils/prisma.js';
-import { UserRole, VirusScanStatus } from '@prisma/client';
-import fs from 'fs/promises';
-import path from 'path';
-import crypto from 'crypto';
+import { Client } from "minio";
+// @ts-ignore - clamscan doesn't have types
+import NodeClam from "clamscan";
+import { prisma } from "../utils/prisma.js";
+import { UserRole } from "@prisma/client";
+import fs from "fs/promises";
+import path from "path";
+import crypto from "crypto";
 
 // MinIO client
 const minioClient = new Client({
-  endPoint: process.env.MINIO_ENDPOINT || 'localhost',
-  port: parseInt(process.env.MINIO_PORT || '9000', 10),
-  useSSL: process.env.MINIO_USE_SSL === 'true',
-  accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-  secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
+  endPoint: process.env.MINIO_ENDPOINT || "localhost",
+  port: parseInt(process.env.MINIO_PORT || "9000", 10),
+  useSSL: process.env.MINIO_USE_SSL === "true",
+  accessKey: process.env.MINIO_ACCESS_KEY || "minioadmin",
+  secretKey: process.env.MINIO_SECRET_KEY || "minioadmin",
 });
 
-const BUCKET_NAME = process.env.MINIO_BUCKET || 'donor-oversight';
+const BUCKET_NAME = process.env.MINIO_BUCKET || "donor-oversight";
 
 // ClamAV scanner initialization
 let clamscan: any = null;
@@ -24,12 +25,12 @@ const initClamAV = async () => {
     try {
       clamscan = await new NodeClam().init({
         clamdscan: {
-          host: process.env.CLAMAV_HOST || 'localhost',
-          port: parseInt(process.env.CLAMAV_PORT || '3310', 10),
+          host: process.env.CLAMAV_HOST || "localhost",
+          port: parseInt(process.env.CLAMAV_PORT || "3310", 10),
         },
       });
     } catch (error) {
-      console.error('Failed to initialize ClamAV:', error);
+      console.error("Failed to initialize ClamAV:", error);
       // Continue without virus scanning if ClamAV is unavailable
     }
   }
@@ -47,9 +48,10 @@ export class AttachmentService {
     actualId: string,
     uploadedById: string,
     uploadedByRole: UserRole,
-    ipAddress?: string
+    ipAddress?: string,
   ) {
-    let virusScanStatus: VirusScanStatus = 'Pending';
+    let virusScanStatus: "Pending" | "Clean" | "Infected" | "Failed" =
+      "Pending";
     let virusScanResult: string | undefined;
 
     // 1. Scan file with ClamAV (if available)
@@ -61,46 +63,46 @@ export class AttachmentService {
         if (isInfected) {
           // Delete temp file
           await fs.unlink(file.filepath);
-          throw new Error(`File is infected: ${viruses?.join(', ')}`);
+          throw new Error(`File is infected: ${viruses?.join(", ")}`);
         }
 
-        virusScanStatus = 'Clean';
-        virusScanResult = 'No threats detected';
+        virusScanStatus = "Clean";
+        virusScanResult = "No threats detected";
       } catch (error: any) {
-        if (error.message.includes('infected')) {
+        if (error.message.includes("infected")) {
           throw error; // Re-throw infection errors
         }
-        // If scan fails for other reasons, mark as error but continue
-        virusScanStatus = 'Error';
+        // If scan fails for other reasons, mark as failed but continue
+        virusScanStatus = "Failed";
         virusScanResult = error.message;
       }
     } else {
       // No ClamAV available, mark as pending
-      virusScanStatus = 'Pending';
-      virusScanResult = 'ClamAV not available';
+      virusScanStatus = "Pending";
+      virusScanResult = "ClamAV not available";
     }
 
     // 2. Generate storage key
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, "0");
     const uuid = crypto.randomUUID();
-    const ext = path.extname(file.originalFilename || '');
+    const ext = path.extname(file.originalFilename || "");
     const storageKey = `attachments/${year}/${month}/${uuid}${ext}`;
 
     // 3. Ensure bucket exists
     try {
       const bucketExists = await minioClient.bucketExists(BUCKET_NAME);
       if (!bucketExists) {
-        await minioClient.makeBucket(BUCKET_NAME, 'us-east-1');
+        await minioClient.makeBucket(BUCKET_NAME, "us-east-1");
       }
     } catch (error) {
-      console.error('MinIO bucket check/creation failed:', error);
+      console.error("MinIO bucket check/creation failed:", error);
     }
 
     // 4. Upload to MinIO
     await minioClient.fPutObject(BUCKET_NAME, storageKey, file.filepath, {
-      'Content-Type': file.mimetype,
+      "Content-Type": file.mimetype,
     });
 
     // 5. Create attachment record
@@ -108,7 +110,7 @@ export class AttachmentService {
       data: {
         actualId,
         fileName: `${uuid}${ext}`,
-        originalFileName: file.originalFilename || 'unknown',
+        originalFileName: file.originalFilename || "unknown",
         fileSize: file.size,
         mimeType: file.mimetype,
         storageKey,
@@ -126,8 +128,8 @@ export class AttachmentService {
       data: {
         actorId: uploadedById,
         actorRole: uploadedByRole,
-        action: 'Create',
-        objectType: 'Attachment',
+        action: "Create",
+        objectType: "Attachment",
         objectId: attachment.id,
         newValues: {
           actualId,
@@ -141,24 +143,24 @@ export class AttachmentService {
     return attachment;
   }
 
-  async getDownloadUrl(attachmentId: string, userId: string): Promise<string> {
+  async getDownloadUrl(attachmentId: string, _userId: string): Promise<string> {
     const attachment = await prisma.attachment.findUnique({
       where: { id: attachmentId, deletedAt: null },
     });
 
     if (!attachment) {
-      throw new Error('Attachment not found');
+      throw new Error("Attachment not found");
     }
 
-    if (attachment.virusScanStatus === 'Infected') {
-      throw new Error('Attachment is infected and cannot be downloaded');
+    if (attachment.virusScanStatus === "Infected") {
+      throw new Error("Attachment is infected and cannot be downloaded");
     }
 
     // Generate signed URL (expires in 1 hour)
     const url = await minioClient.presignedGetObject(
       BUCKET_NAME,
       attachment.storageKey,
-      3600
+      3600,
     );
 
     return url;
@@ -168,14 +170,14 @@ export class AttachmentService {
     attachmentId: string,
     deletedById: string,
     deletedByRole: UserRole,
-    ipAddress?: string
+    ipAddress?: string,
   ) {
     const attachment = await prisma.attachment.findUnique({
       where: { id: attachmentId, deletedAt: null },
     });
 
     if (!attachment) {
-      throw new Error('Attachment not found');
+      throw new Error("Attachment not found");
     }
 
     // Soft delete in database
@@ -192,8 +194,8 @@ export class AttachmentService {
       data: {
         actorId: deletedById,
         actorRole: deletedByRole,
-        action: 'Delete',
-        objectType: 'Attachment',
+        action: "Delete",
+        objectType: "Attachment",
         objectId: attachmentId,
         ipAddress,
       },

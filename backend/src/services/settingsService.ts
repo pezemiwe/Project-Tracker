@@ -1,11 +1,5 @@
 import { prisma } from "../utils/prisma.js";
 
-interface SystemSettingInput {
-  key: string;
-  value: any;
-  description?: string;
-}
-
 export class SettingsService {
   private cache: Map<string, any> = new Map();
 
@@ -25,7 +19,7 @@ export class SettingsService {
     key: string,
     value: any,
     userId: string,
-    description?: string
+    description?: string,
   ): Promise<void> {
     await prisma.systemSetting.upsert({
       where: { key },

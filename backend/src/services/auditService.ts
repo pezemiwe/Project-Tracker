@@ -13,7 +13,7 @@ export class AuditService {
   async getAuditLogs(
     filters: AuditLogFilters,
     page: number = 1,
-    limit: number = 50
+    limit: number = 50,
   ) {
     const where = this.buildWhereClause(filters);
 
@@ -47,8 +47,8 @@ export class AuditService {
         objectType,
         objectId,
         OR: [
-          { previousValues: { path: [field], not: null } },
-          { newValues: { path: [field], not: null } },
+          { previousValues: { path: [field], not: undefined } },
+          { newValues: { path: [field], not: undefined } },
         ],
       },
       include: {
@@ -110,7 +110,9 @@ export class AuditService {
     ]);
 
     return [headers, ...rows]
-      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+      )
       .join("\n");
   }
 
@@ -157,7 +159,8 @@ export class AuditService {
     const actor = log.actor?.fullName || "System";
     const objectType = log.objectType;
     const action = log.action;
-    const title = (log.newValues as any)?.title || (log.previousValues as any)?.title || "";
+    const title =
+      (log.newValues as any)?.title || (log.previousValues as any)?.title || "";
     const nameStr = title ? ` "${title}"` : "";
 
     switch (action) {

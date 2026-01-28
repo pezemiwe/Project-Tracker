@@ -12,11 +12,6 @@ interface SystemSetting {
   };
 }
 
-interface UpdateSettingData {
-  value: any;
-  description?: string;
-}
-
 export function useSettings() {
   return useQuery({
     queryKey: ["settings"],

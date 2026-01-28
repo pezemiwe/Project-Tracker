@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useGanttData } from "../../hooks/useDashboard";
-import { Calendar, Filter, Clock } from "lucide-react";
+import { Calendar, Filter, Clock, ArrowRight } from "lucide-react";
 
 const STATUS_COLORS = {
   Planning: {
@@ -46,6 +47,7 @@ const normalizeStatus = (status: string): string => {
 };
 
 export default function GanttView() {
+  const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
   const [filters, setFilters] = useState({
     startYear: currentYear - 1,
@@ -89,14 +91,18 @@ export default function GanttView() {
       {} as Record<string, typeof filteredActivities>,
     );
 
-    return statusOrder.map((status) => ({
-      status,
-      activities: (groups[status] || []).sort(
+    return statusOrder.map((status) => {
+      const sortedActivities = (groups[status] || []).sort(
         (a, b) =>
-          new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
-      ),
-      count: (groups[status] || []).length,
-    }));
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+      );
+      return {
+        status,
+        activities: sortedActivities.slice(0, 9),
+        count: sortedActivities.length,
+        hasMore: sortedActivities.length > 9,
+      };
+    });
   }, [filteredActivities]);
 
   const activeStatusGroup =
@@ -143,6 +149,20 @@ export default function GanttView() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Activity Timeline
+        </h2>
+        <button
+          onClick={() =>
+            navigate({ to: "/activities", search: { activityId: undefined } })
+          }
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#1a365d] dark:text-blue-400 hover:text-[#059669] dark:hover:text-emerald-400 transition-colors group"
+        >
+          <span>View all</span>
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </button>
+      </div>
       <div className="bg-gradient-to-br from-[#1a365d]/5 via-white to-white dark:from-slate-800 dark:via-slate-900 dark:to-slate-900 border border-[#1a365d]/10 dark:border-slate-700 rounded-xl p-6 shadow-lg">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2.5 rounded-xl bg-[#1a365d] dark:bg-slate-700 text-white shadow-md">

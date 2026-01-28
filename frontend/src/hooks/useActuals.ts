@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../lib/api";
 
 export interface Actual {
   id: string;
@@ -44,9 +44,11 @@ export interface UpdateActualData {
 
 export function useActuals(activityId: string) {
   return useQuery({
-    queryKey: ['actuals', activityId],
+    queryKey: ["actuals", activityId],
     queryFn: async (): Promise<Actual[]> => {
-      const response = await api.get<Actual[]>(`/actuals?activityId=${activityId}`);
+      const response = await api.get<Actual[]>(
+        `/actuals?activityId=${activityId}`,
+      );
       return response.data;
     },
     enabled: !!activityId,
@@ -58,13 +60,17 @@ export function useCreateActual() {
 
   return useMutation({
     mutationFn: async (data: CreateActualData): Promise<Actual> => {
-      const response = await api.post<Actual>('/actuals', data);
+      const response = await api.post<Actual>("/actuals", data);
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['actuals', variables.activityId] });
-      queryClient.invalidateQueries({ queryKey: ['activities', variables.activityId] });
-      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({
+        queryKey: ["actuals", variables.activityId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["activities", variables.activityId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
   });
 }
@@ -78,9 +84,11 @@ export function useUpdateActual(actualId: string) {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['actuals', data.activityId] });
-      queryClient.invalidateQueries({ queryKey: ['activities', data.activityId] });
-      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ["actuals", data.activityId] });
+      queryClient.invalidateQueries({
+        queryKey: ["activities", data.activityId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
   });
 }
@@ -89,13 +97,23 @@ export function useDeleteActual() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ actualId, activityId }: { actualId: string; activityId: string }): Promise<void> => {
+    mutationFn: async ({
+      actualId,
+      activityId: _activityId,
+    }: {
+      actualId: string;
+      activityId: string;
+    }): Promise<void> => {
       await api.delete(`/actuals/${actualId}`);
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['actuals', variables.activityId] });
-      queryClient.invalidateQueries({ queryKey: ['activities', variables.activityId] });
-      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({
+        queryKey: ["actuals", variables.activityId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["activities", variables.activityId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
   });
 }
@@ -104,18 +122,24 @@ export function useUploadAttachment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ actualId, file }: { actualId: string; file: File }): Promise<Attachment> => {
+    mutationFn: async ({
+      actualId,
+      file,
+    }: {
+      actualId: string;
+      file: File;
+    }): Promise<Attachment> => {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('actualId', actualId);
+      formData.append("file", file);
+      formData.append("actualId", actualId);
 
-      const response = await api.post<Attachment>('/attachments', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await api.post<Attachment>("/attachments", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['actuals'] });
+      queryClient.invalidateQueries({ queryKey: ["actuals"] });
     },
   });
 }
@@ -123,7 +147,9 @@ export function useUploadAttachment() {
 export function useDownloadAttachment() {
   return useMutation({
     mutationFn: async (attachmentId: string): Promise<string> => {
-      const response = await api.get<{ url: string }>(`/attachments/${attachmentId}/download`);
+      const response = await api.get<{ url: string }>(
+        `/attachments/${attachmentId}/download`,
+      );
       return response.data.url;
     },
   });
@@ -137,7 +163,7 @@ export function useDeleteAttachment() {
       await api.delete(`/attachments/${attachmentId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['actuals'] });
+      queryClient.invalidateQueries({ queryKey: ["actuals"] });
     },
   });
 }

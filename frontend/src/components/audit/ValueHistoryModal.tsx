@@ -1,4 +1,3 @@
-import React from "react";
 import { useValueHistory } from "../../hooks/useAudit";
 import { X, ArrowRight, Clock } from "lucide-react";
 
@@ -23,7 +22,7 @@ export default function ValueHistoryModal({
     objectType,
     objectId,
     field,
-    isOpen
+    isOpen,
   );
 
   if (!isOpen) return null;
@@ -95,7 +94,9 @@ export default function ValueHistoryModal({
             <div className="flex items-center justify-center py-16">
               <div className="text-center">
                 <div className="w-10 h-10 border-4 border-amber-600/30 border-t-amber-500 rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-slate-400 text-sm">Loading change history...</p>
+                <p className="text-slate-400 text-sm">
+                  Loading change history...
+                </p>
               </div>
             </div>
           ) : !history || history.length === 0 ? (
@@ -146,8 +147,8 @@ export default function ValueHistoryModal({
                               change.action === "Create"
                                 ? "bg-green-500/10 text-green-400 border border-green-500/20"
                                 : change.action === "Delete"
-                                ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                                : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                                  ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                                  : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
                             }`}
                           >
                             {change.action}
@@ -223,7 +224,8 @@ export default function ValueHistoryModal({
         <div className="border-t border-slate-800/50 bg-[#1e2230] px-6 py-4">
           <div className="flex items-center justify-between">
             <p className="text-xs text-slate-500">
-              {history?.length || 0} change{history?.length !== 1 ? "s" : ""} recorded
+              {history?.length || 0} change{history?.length !== 1 ? "s" : ""}{" "}
+              recorded
             </p>
             <button
               onClick={onClose}

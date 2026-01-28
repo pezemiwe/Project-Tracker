@@ -1,7 +1,7 @@
-import { UserRole, ActivityStatus } from '@prisma/client';
-import { prisma } from '../utils/prisma.js';
-import { objectiveService } from './objectiveService.js';
-import { notificationService } from './notificationService.js';
+import { UserRole, ActivityStatus } from "@prisma/client";
+import { prisma } from "../utils/prisma.js";
+import { objectiveService } from "./objectiveService.js";
+import { notificationService } from "./notificationService.js";
 
 const LOCK_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -39,7 +39,7 @@ export class ActivityService {
     data: CreateActivityData,
     createdById: string,
     createdByRole: UserRole,
-    ipAddress?: string
+    ipAddress?: string,
   ) {
     // Verify objective exists
     const objective = await prisma.investmentObjective.findUnique({
@@ -47,16 +47,19 @@ export class ActivityService {
     });
 
     if (!objective) {
-      throw new Error('Investment objective not found');
+      throw new Error("Investment objective not found");
     }
 
     // Validate annual estimates
     if (data.annualEstimates && Object.keys(data.annualEstimates).length > 0) {
-      const sum = Object.values(data.annualEstimates).reduce((a, b) => a + b, 0);
+      const sum = Object.values(data.annualEstimates).reduce(
+        (a, b) => a + b,
+        0,
+      );
       const total = data.estimatedSpendUsdTotal || 0;
 
       if (Math.abs(sum - total) > 0.01) {
-        throw new Error('Annual estimates must equal total estimated spend');
+        throw new Error("Annual estimates must equal total estimated spend");
       }
     }
 
@@ -66,9 +69,9 @@ export class ActivityService {
         investmentObjectiveId: data.investmentObjectiveId,
         title: data.title,
         descriptionAndObjective: data.descriptionAndObjective,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        status: data.status || 'Planned',
+        startDate: data.startDate!,
+        endDate: data.endDate!,
+        status: data.status || "Planned",
         progressPercent: data.progressPercent || 0,
         lead: data.lead,
         estimatedSpendUsdTotal: data.estimatedSpendUsdTotal,
@@ -105,8 +108,8 @@ export class ActivityService {
       data: {
         actorId: createdById,
         actorRole: createdByRole,
-        action: 'Create',
-        objectType: 'Activity',
+        action: "Create",
+        objectType: "Activity",
         objectId: activity.id,
         newValues: {
           title: activity.title,
@@ -118,7 +121,12 @@ export class ActivityService {
     });
 
     // Notify relevant users about new activity
-    await this.notifyNewActivity(activity.id, activity.title, objective.title, createdById);
+    await this.notifyNewActivity(
+      activity.id,
+      activity.title,
+      objective.title,
+      createdById,
+    );
 
     return activity;
   }
@@ -130,7 +138,7 @@ export class ActivityService {
     activityId: string,
     activityTitle: string,
     objectiveTitle: string,
-    createdById: string
+    createdById: string,
   ) {
     try {
       // Get creator's name
@@ -142,7 +150,7 @@ export class ActivityService {
       // Notify Finance and Committee users (excluding creator)
       const usersToNotify = await prisma.user.findMany({
         where: {
-          role: { in: ['Finance', 'CommitteeMember', 'Admin'] },
+          role: { in: ["Finance", "CommitteeMember", "Admin"] },
           id: { not: createdById },
         },
         select: { id: true },
@@ -151,14 +159,14 @@ export class ActivityService {
       for (const user of usersToNotify) {
         await notificationService.createNotification({
           userId: user.id,
-          type: 'ActivityCreated',
-          title: 'New Activity Created',
-          message: `${creator?.fullName || 'A user'} created activity "${activityTitle}" under "${objectiveTitle}"`,
+          type: "ActivityCreated",
+          title: "New Activity Created",
+          message: `${creator?.fullName || "A user"} created activity "${activityTitle}" under "${objectiveTitle}"`,
           link: `/activities?activityId=${activityId}`,
         });
       }
     } catch (error) {
-      console.error('Failed to send activity creation notifications:', error);
+      console.error("Failed to send activity creation notifications:", error);
     }
   }
 
@@ -167,7 +175,7 @@ export class ActivityService {
     data: UpdateActivityData,
     updatedById: string,
     updatedByRole: UserRole,
-    ipAddress?: string
+    ipAddress?: string,
   ) {
     // Get current activity
     const currentActivity = await prisma.activity.findUnique({
@@ -175,23 +183,30 @@ export class ActivityService {
     });
 
     if (!currentActivity) {
-      throw new Error('Activity not found');
+      throw new Error("Activity not found");
     }
 
     // Check if user holds the lock
-    if (currentActivity.lockedById && currentActivity.lockedById !== updatedById) {
-      throw new Error('Activity is locked by another user');
+    if (
+      currentActivity.lockedById &&
+      currentActivity.lockedById !== updatedById
+    ) {
+      throw new Error("Activity is locked by another user");
     }
 
     // Validate annual estimates
     if (data.annualEstimates !== undefined) {
-      const sum = Object.values(data.annualEstimates).reduce((a, b) => a + b, 0);
-      const total = data.estimatedSpendUsdTotal !== undefined
-        ? data.estimatedSpendUsdTotal
-        : currentActivity.estimatedSpendUsdTotal?.toNumber() || 0;
+      const sum = Object.values(data.annualEstimates).reduce(
+        (a, b) => a + b,
+        0,
+      );
+      const total =
+        data.estimatedSpendUsdTotal !== undefined
+          ? data.estimatedSpendUsdTotal
+          : currentActivity.estimatedSpendUsdTotal?.toNumber() || 0;
 
       if (Math.abs(sum - total) > 0.01) {
-        throw new Error('Annual estimates must equal total estimated spend');
+        throw new Error("Annual estimates must equal total estimated spend");
       }
     }
 
@@ -222,7 +237,9 @@ export class ActivityService {
 
     // Recompute objective's estimated spend if amount changed
     if (data.estimatedSpendUsdTotal !== undefined) {
-      await objectiveService.recomputeObjectiveSpend(currentActivity.investmentObjectiveId);
+      await objectiveService.recomputeObjectiveSpend(
+        currentActivity.investmentObjectiveId,
+      );
     }
 
     // Create audit log
@@ -238,7 +255,8 @@ export class ActivityService {
       newValues.status = data.status;
     }
     if (data.estimatedSpendUsdTotal !== undefined) {
-      previousValues.estimatedSpendUsdTotal = currentActivity.estimatedSpendUsdTotal?.toNumber();
+      previousValues.estimatedSpendUsdTotal =
+        currentActivity.estimatedSpendUsdTotal?.toNumber();
       newValues.estimatedSpendUsdTotal = data.estimatedSpendUsdTotal;
     }
     if (data.annualEstimates !== undefined) {
@@ -250,8 +268,8 @@ export class ActivityService {
       data: {
         actorId: updatedById,
         actorRole: updatedByRole,
-        action: 'Update',
-        objectType: 'Activity',
+        action: "Update",
+        objectType: "Activity",
         objectId: activity.id,
         previousValues,
         newValues,
@@ -266,14 +284,14 @@ export class ActivityService {
     activityId: string,
     deletedById: string,
     deletedByRole: UserRole,
-    ipAddress?: string
+    ipAddress?: string,
   ) {
     const activity = await prisma.activity.findUnique({
       where: { id: activityId, deletedAt: null },
     });
 
     if (!activity) {
-      throw new Error('Activity not found');
+      throw new Error("Activity not found");
     }
 
     // Soft delete activity
@@ -286,15 +304,17 @@ export class ActivityService {
     });
 
     // Recompute objective's estimated spend
-    await objectiveService.recomputeObjectiveSpend(activity.investmentObjectiveId);
+    await objectiveService.recomputeObjectiveSpend(
+      activity.investmentObjectiveId,
+    );
 
     // Create audit log
     await prisma.auditLog.create({
       data: {
         actorId: deletedById,
         actorRole: deletedByRole,
-        action: 'Delete',
-        objectType: 'Activity',
+        action: "Delete",
+        objectType: "Activity",
         objectId: activityId,
         ipAddress,
       },
@@ -316,7 +336,7 @@ export class ActivityService {
     });
 
     if (!activity) {
-      throw new Error('Activity not found');
+      throw new Error("Activity not found");
     }
 
     // Check if already locked
@@ -324,7 +344,9 @@ export class ActivityService {
       // Check if lock expired
       const lockAge = Date.now() - (activity.lockedAt?.getTime() || 0);
       if (lockAge < LOCK_TIMEOUT_MS) {
-        throw new Error(`Activity is locked by ${activity.lockedBy?.fullName || 'another user'}`);
+        throw new Error(
+          `Activity is locked by ${activity.lockedBy?.fullName || "another user"}`,
+        );
       }
     }
 
@@ -351,14 +373,14 @@ export class ActivityService {
     });
 
     if (!activity) {
-      throw new Error('Activity not found');
+      throw new Error("Activity not found");
     }
 
     // Only allow unlocking if user holds the lock or lock expired
     if (activity.lockedById && activity.lockedById !== userId) {
       const lockAge = Date.now() - (activity.lockedAt?.getTime() || 0);
       if (lockAge < LOCK_TIMEOUT_MS) {
-        throw new Error('Cannot unlock activity locked by another user');
+        throw new Error("Cannot unlock activity locked by another user");
       }
     }
 
@@ -389,7 +411,7 @@ export class ActivityService {
     });
 
     if (!activity) {
-      throw new Error('Activity not found');
+      throw new Error("Activity not found");
     }
 
     if (!activity.lockedById || !activity.lockedAt) {
@@ -432,7 +454,7 @@ export class ActivityService {
     page?: number;
     limit?: number;
     sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
+    sortOrder?: "asc" | "desc";
   }) {
     const {
       investmentObjectiveId,
@@ -442,14 +464,15 @@ export class ActivityService {
       endYear,
       page = 1,
       limit = 50,
-      sortBy = 'sn',
-      sortOrder = 'asc',
+      sortBy = "sn",
+      sortOrder = "asc",
     } = filters;
 
     const where: any = { deletedAt: null };
-    if (investmentObjectiveId) where.investmentObjectiveId = investmentObjectiveId;
+    if (investmentObjectiveId)
+      where.investmentObjectiveId = investmentObjectiveId;
     if (status) where.status = status;
-    if (lead) where.lead = { contains: lead, mode: 'insensitive' };
+    if (lead) where.lead = { contains: lead, mode: "insensitive" };
     if (startYear || endYear) {
       where.startDate = {};
       if (startYear) where.startDate.gte = new Date(`${startYear}-01-01`);
@@ -548,10 +571,14 @@ export class ActivityService {
     });
 
     if (!activity) {
-      throw new Error('Activity not found');
+      throw new Error("Activity not found");
     }
 
-    return { ...activity, lockedBy: activity.lockedById, lockedByUser: activity.lockedBy };
+    return {
+      ...activity,
+      lockedBy: activity.lockedById,
+      lockedByUser: activity.lockedBy,
+    };
   }
 
   async cleanupExpiredLocks() {

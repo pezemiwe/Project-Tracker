@@ -1,19 +1,19 @@
-import { UserRole } from '@prisma/client';
-import { prisma } from '../utils/prisma.js';
-import { hashPassword, validatePasswordStrength } from '../utils/password.js';
-import { CreateUserRequest, UpdateUserRequest } from '../types/index.js';
+import { UserRole } from "@prisma/client";
+import { prisma } from "../utils/prisma.js";
+import { hashPassword, validatePasswordStrength } from "../utils/password.js";
+import { CreateUserRequest, UpdateUserRequest } from "../types/index.js";
 
 export class UserService {
   async createUser(
     data: CreateUserRequest,
     createdById: string,
     createdByRole: UserRole,
-    ipAddress?: string
+    ipAddress?: string,
   ) {
     // Validate password strength
     const passwordValidation = validatePasswordStrength(data.temporaryPassword);
     if (!passwordValidation.valid) {
-      throw new Error(`Weak password: ${passwordValidation.errors.join(', ')}`);
+      throw new Error(`Weak password: ${passwordValidation.errors.join(", ")}`);
     }
 
     // Check if user already exists
@@ -22,7 +22,7 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new Error('User with this email already exists');
+      throw new Error("User with this email already exists");
     }
 
     // Hash password
@@ -52,8 +52,8 @@ export class UserService {
       data: {
         actorId: createdById,
         actorRole: createdByRole,
-        action: 'Create',
-        objectType: 'User',
+        action: "Create",
+        objectType: "User",
         objectId: user.id,
         newValues: {
           email: user.email,
@@ -72,7 +72,7 @@ export class UserService {
     data: UpdateUserRequest,
     updatedById: string,
     updatedByRole: UserRole,
-    ipAddress?: string
+    ipAddress?: string,
   ) {
     // Get current user state
     const currentUser = await prisma.user.findUnique({
@@ -80,7 +80,7 @@ export class UserService {
     });
 
     if (!currentUser) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     // If email is being changed, check uniqueness
@@ -90,7 +90,7 @@ export class UserService {
       });
 
       if (existingUser) {
-        throw new Error('User with this email already exists');
+        throw new Error("User with this email already exists");
       }
     }
 
@@ -99,7 +99,6 @@ export class UserService {
       where: { id: userId },
       data: {
         ...data,
-        updatedById,
       },
       select: {
         id: true,
@@ -136,8 +135,8 @@ export class UserService {
       data: {
         actorId: updatedById,
         actorRole: updatedByRole,
-        action: 'Update',
-        objectType: 'User',
+        action: "Update",
+        objectType: "User",
         objectId: user.id,
         previousValues,
         newValues,
@@ -153,12 +152,12 @@ export class UserService {
     newPassword: string,
     resetById: string,
     resetByRole: UserRole,
-    ipAddress?: string
+    ipAddress?: string,
   ) {
     // Validate password strength
     const passwordValidation = validatePasswordStrength(newPassword);
     if (!passwordValidation.valid) {
-      throw new Error(`Weak password: ${passwordValidation.errors.join(', ')}`);
+      throw new Error(`Weak password: ${passwordValidation.errors.join(", ")}`);
     }
 
     // Hash password
@@ -169,7 +168,6 @@ export class UserService {
       where: { id: userId },
       data: {
         passwordHash,
-        updatedById: resetById,
       },
     });
 
@@ -178,10 +176,10 @@ export class UserService {
       data: {
         actorId: resetById,
         actorRole: resetByRole,
-        action: 'Update',
-        objectType: 'User',
+        action: "Update",
+        objectType: "User",
         objectId: userId,
-        comment: 'Password reset by admin',
+        comment: "Password reset by admin",
         ipAddress,
       },
     });
@@ -213,7 +211,7 @@ export class UserService {
         },
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       prisma.user.count({ where }),
     ]);
@@ -245,7 +243,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     return user;

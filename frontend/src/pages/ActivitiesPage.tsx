@@ -183,16 +183,6 @@ export function ActivitiesPage() {
     setSelectedActivityId(event.data.id);
   }, []);
 
-  const onPaginationChanged = useCallback(
-    (event: any) => {
-      const newPage = event.api.paginationGetCurrentPage() + 1;
-      if (newPage !== filters.page) {
-        handleFilterChange("page", newPage);
-      }
-    },
-    [filters.page, handleFilterChange],
-  );
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background dark:bg-gray-900 flex items-center justify-center">
@@ -316,17 +306,12 @@ export function ActivitiesPage() {
                 rowData={data?.activities || []}
                 onGridReady={onGridReady}
                 onRowClicked={onRowClicked}
-                pagination={true}
-                paginationPageSize={filters.limit}
-                paginationTotalRows={data?.pagination.total}
-                paginationCurrentPage={filters.page - 1}
-                onPaginationChanged={onPaginationChanged}
+                pagination={false}
                 domLayout="normal"
                 rowHeight={52}
                 headerHeight={48}
                 rowClass="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 animateRows={true}
-                suppressPaginationPanel={true}
                 suppressMovableColumns={true}
                 suppressCellFocus={true}
               />

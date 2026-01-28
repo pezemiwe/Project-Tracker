@@ -31,7 +31,7 @@ export function NavItem({ to, icon: Icon, label, collapsed }: NavItemProps) {
         ),
       }}
     >
-      {({ isActive }: { isActive: boolean }) => (
+      {({ isActive: _isActive }: { isActive: boolean }) => (
         <>
           <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={2} />
           {!collapsed && (

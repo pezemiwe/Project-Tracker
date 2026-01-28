@@ -1,5 +1,5 @@
-import { prisma } from '../utils/prisma.js';
-import { UserRole } from '@prisma/client';
+import { prisma } from "../utils/prisma.js";
+import { UserRole } from "@prisma/client";
 
 interface CreateActualData {
   activityId: string;
@@ -21,7 +21,7 @@ export class ActualService {
     data: CreateActualData,
     createdById: string,
     createdByRole: UserRole,
-    ipAddress?: string
+    ipAddress?: string,
   ) {
     // Verify activity exists
     const activity = await prisma.activity.findUnique({
@@ -29,7 +29,7 @@ export class ActualService {
     });
 
     if (!activity) {
-      throw new Error('Activity not found');
+      throw new Error("Activity not found");
     }
 
     // Create actual
@@ -68,8 +68,8 @@ export class ActualService {
       data: {
         actorId: createdById,
         actorRole: createdByRole,
-        action: 'Create',
-        objectType: 'Actual',
+        action: "Create",
+        objectType: "Actual",
         objectId: actual.id,
         newValues: {
           activityId: data.activityId,
@@ -91,7 +91,7 @@ export class ActualService {
     data: UpdateActualData,
     updatedById: string,
     updatedByRole: UserRole,
-    ipAddress?: string
+    ipAddress?: string,
   ) {
     // Get current actual
     const currentActual = await prisma.actual.findUnique({
@@ -99,7 +99,7 @@ export class ActualService {
     });
 
     if (!currentActual) {
-      throw new Error('Actual not found');
+      throw new Error("Actual not found");
     }
 
     // Update actual
@@ -134,10 +134,10 @@ export class ActualService {
       data: {
         actorId: updatedById,
         actorRole: updatedByRole,
-        action: 'Update',
-        objectType: 'Actual',
+        action: "Update",
+        objectType: "Actual",
         objectId: actualId,
-        oldValues: {
+        previousValues: {
           amountUsd: currentActual.amountUsd,
           category: currentActual.category,
         },
@@ -159,14 +159,14 @@ export class ActualService {
     actualId: string,
     deletedById: string,
     deletedByRole: UserRole,
-    ipAddress?: string
+    ipAddress?: string,
   ) {
     const actual = await prisma.actual.findUnique({
       where: { id: actualId, deletedAt: null },
     });
 
     if (!actual) {
-      throw new Error('Actual not found');
+      throw new Error("Actual not found");
     }
 
     // Soft delete
@@ -183,8 +183,8 @@ export class ActualService {
       data: {
         actorId: deletedById,
         actorRole: deletedByRole,
-        action: 'Delete',
-        objectType: 'Actual',
+        action: "Delete",
+        objectType: "Actual",
         objectId: actualId,
         ipAddress,
       },
@@ -211,7 +211,7 @@ export class ActualService {
           },
         },
       },
-      orderBy: { entryDate: 'desc' },
+      orderBy: { entryDate: "desc" },
     });
   }
 
@@ -249,7 +249,7 @@ export class ActualService {
 
       // Notify Finance users
       const financeUsers = await prisma.user.findMany({
-        where: { OR: [{ role: 'Finance' }, { role: 'Admin' }] },
+        where: { OR: [{ role: "Finance" }, { role: "Admin" }] },
         select: { id: true },
       });
 
@@ -257,8 +257,8 @@ export class ActualService {
         await prisma.notification.create({
           data: {
             userId: user.id,
-            type: 'VarianceAlert',
-            title: 'Spend Exceeded Estimate',
+            type: "VarianceAlert",
+            title: "Spend Exceeded Estimate",
             message: `${activity.title} has exceeded estimated spend by ${variance.toFixed(1)}%`,
             link: `/activities?activityId=${activityId}`,
             isRead: false,

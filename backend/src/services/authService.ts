@@ -1,24 +1,27 @@
-import { UserRole } from '@prisma/client';
-import { prisma } from '../utils/prisma.js';
-import { verifyPassword } from '../utils/password.js';
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
-import { LoginResponse } from '../types/index.js';
+import { prisma } from "../utils/prisma.js";
+import { verifyPassword } from "../utils/password.js";
+import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
+import { LoginResponse } from "../types/index.js";
 
 export class AuthService {
-  async login(email: string, password: string, ipAddress?: string): Promise<LoginResponse> {
+  async login(
+    email: string,
+    password: string,
+    ipAddress?: string,
+  ): Promise<LoginResponse> {
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user || !user.isActive) {
-      throw new Error('Invalid credentials');
+      throw new Error("Invalid credentials");
     }
 
     // Verify password
     const isValidPassword = await verifyPassword(password, user.passwordHash);
     if (!isValidPassword) {
-      throw new Error('Invalid credentials');
+      throw new Error("Invalid credentials");
     }
 
     // Update last login
@@ -32,10 +35,10 @@ export class AuthService {
       data: {
         actorId: user.id,
         actorRole: user.role,
-        action: 'Create',
-        objectType: 'Session',
+        action: "Create",
+        objectType: "Session",
         objectId: user.id,
-        comment: 'User logged in',
+        comment: "User logged in",
         ipAddress,
       },
     });
@@ -69,10 +72,10 @@ export class AuthService {
     await prisma.auditLog.create({
       data: {
         actorId: userId,
-        action: 'Delete',
-        objectType: 'Session',
+        action: "Delete",
+        objectType: "Session",
         objectId: userId,
-        comment: 'User logged out',
+        comment: "User logged out",
         ipAddress,
       },
     });
