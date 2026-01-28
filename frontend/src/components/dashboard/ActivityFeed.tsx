@@ -1,13 +1,13 @@
 import { useActivityFeed } from "../../hooks/useAudit";
 import { formatDistanceToNow } from "date-fns";
-import { 
-  PlusCircle, 
-  RefreshCw, 
-  Trash2, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  PlusCircle,
+  RefreshCw,
+  Trash2,
+  CheckCircle2,
+  XCircle,
   FileEdit,
-  User as UserIcon
+  User as UserIcon,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -64,26 +64,33 @@ export function ActivityFeed() {
       <div className="space-y-6">
         {feed.map((item) => {
           const Icon = ACTION_ICONS[item.action] || UserIcon;
-          const colorClass = ACTION_COLORS[item.action] || "text-muted-foreground bg-muted";
+          const colorClass =
+            ACTION_COLORS[item.action] || "text-muted-foreground bg-muted";
 
           return (
             <div key={item.id} className="relative flex gap-4 group">
-              <div className={cn(
-                "relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-4 border-card",
-                colorClass
-              )}>
+              <div
+                className={cn(
+                  "relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-4 border-card",
+                  colorClass,
+                )}
+              >
                 <Icon className="w-4 h-4" />
               </div>
-              
+
               <div className="flex-1 pt-1.5 min-w-0">
                 <p className="text-sm text-foreground leading-snug">
                   {item.description}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(item.timestamp), {
+                      addSuffix: true,
+                    })}
                   </span>
-                  <span className="text-[10px] text-muted-foreground/40">•</span>
+                  <span className="text-[10px] text-muted-foreground/40">
+                    •
+                  </span>
                   <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60">
                     {item.objectType}
                   </span>

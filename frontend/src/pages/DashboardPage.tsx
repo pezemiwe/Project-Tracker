@@ -20,7 +20,6 @@ import {
   BarChart3,
   Plus,
   Target,
-  ArrowRight,
 } from "lucide-react";
 import {
   BarChart,
@@ -154,73 +153,46 @@ export function DashboardPage() {
         </section>
 
         {/* Two Column Layout: Chart + Alerts */}
-        <section className="grid grid-cols-1 xl:grid-cols-5 gap-6 mb-8">
-          {/* Annual Spend Chart - Takes 3 columns */}
-          <div className="xl:col-span-3">
-            <SectionHeader title="Annual Spend Analysis" />
-            <div className="bg-card border border-border/40 rounded-lg p-6 h-[400px]">
+        <section className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+          {/* Annual Spend Chart */}
+          <div className="xl:col-span-2">
+            <SectionHeader title="Annual Spend" />
+            <div className="bg-card border border-border/40 rounded-lg p-6 h-[380px]">
               {spendLoading ? (
                 <div className="flex items-center justify-center h-full">
-                  <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
                 </div>
               ) : !spendData || spendData.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <BarChart3 className="w-12 h-12 mb-3 opacity-40" />
-                  <p>No spend data available</p>
+                  <BarChart3 className="w-10 h-10 mb-2 opacity-30" />
+                  <p className="text-sm">No data available</p>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={spendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="hsl(var(--border))"
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="year"
-                      stroke="hsl(var(--muted-foreground))"
-                      style={{ fontSize: "12px" }}
-                      tickLine={false}
-                      axisLine={false}
-                    />
+                  <BarChart data={spendData}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                    <XAxis dataKey="year" fontSize={12} />
                     <YAxis
-                      stroke="hsl(var(--muted-foreground))"
-                      style={{ fontSize: "12px" }}
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                      tickLine={false}
-                      axisLine={false}
-                      width={60}
+                      fontSize={12}
+                      tickFormatter={(value) =>
+                        `$${(value / 1000).toFixed(0)}k`
+                      }
                     />
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                        color: "hsl(var(--foreground))",
-                        boxShadow: "0 4px 12px -2px rgb(0 0 0 / 0.12)",
-                        padding: "12px 16px",
-                      }}
-                      cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
                       formatter={(value: number) => formatCurrency(value)}
                     />
-                    <Legend
-                      wrapperStyle={{ paddingTop: "16px" }}
-                      iconType="circle"
-                      iconSize={8}
-                    />
+                    <Legend iconSize={10} />
                     <Bar
                       dataKey="estimated"
                       name="Estimated"
-                      fill="hsl(var(--primary))"
+                      fill="#3b82f6"
                       radius={[4, 4, 0, 0]}
-                      maxBarSize={48}
                     />
                     <Bar
                       dataKey="actual"
                       name="Actual"
-                      fill="hsl(var(--accent))"
+                      fill="#10b981"
                       radius={[4, 4, 0, 0]}
-                      maxBarSize={48}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -228,73 +200,60 @@ export function DashboardPage() {
             </div>
           </div>
 
-          {/* Variance Alerts - Takes 2 columns */}
-          <div className="xl:col-span-2">
+          {/* Variance Alerts */}
+          <div className="xl:col-span-1">
             <SectionHeader
-              title="Variance Alerts"
+              title="Budget Alerts"
               action={
                 alerts && alerts.length > 0 ? (
                   <Link
                     to="/activities"
                     search={{ activityId: undefined }}
-                    className="text-sm text-primary hover:text-primary/80 inline-flex items-center gap-1 transition-colors"
+                    className="text-xs text-primary hover:underline"
                   >
                     View all
-                    <ArrowRight className="w-3 h-3" />
                   </Link>
                 ) : null
               }
             />
-            <div className="bg-card border border-border/40 rounded-lg overflow-hidden h-[400px] flex flex-col">
+            <div className="bg-card border border-border/40 rounded-lg h-[380px]">
               {alertsLoading ? (
-                <div className="flex items-center justify-center flex-1">
-                  <div className="w-10 h-10 border-4 border-warning/30 border-t-warning rounded-full animate-spin" />
+                <div className="flex items-center justify-center h-full">
+                  <div className="w-8 h-8 border-4 border-warning/30 border-t-warning rounded-full animate-spin" />
                 </div>
               ) : !alerts || alerts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground">
-                  <CheckCircle className="w-12 h-12 mb-3 text-accent/40" />
-                  <p className="font-medium">All activities on track</p>
-                  <p className="text-sm mt-1">No budget overruns detected</p>
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground px-4">
+                  <CheckCircle className="w-10 h-10 mb-2 text-green-500/40" />
+                  <p className="text-sm font-medium">On Track</p>
+                  <p className="text-xs mt-1">No overruns</p>
                 </div>
               ) : (
-                <div className="overflow-y-auto flex-1">
-                  <table className="w-full">
-                    <thead className="sticky top-0 z-10">
-                      <tr className="border-b border-border/40 bg-muted/50">
-                        <th className="text-left px-4 py-3 text-caption font-medium">
-                          Activity
-                        </th>
-                        <th className="text-right px-4 py-3 text-caption font-medium">
-                          Variance
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/30">
-                      {alerts.map((alert) => (
-                        <tr
-                          key={alert.activityId}
-                          className="hover:bg-muted/30 transition-colors cursor-pointer"
-                        >
-                          <td className="px-4 py-3">
-                            <div className="text-sm font-medium text-foreground truncate max-w-[200px]">
-                              {alert.activityTitle}
-                            </div>
-                            <div className="text-xs text-muted-foreground font-mono">
-                              {alert.activitySn}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="text-sm font-mono font-medium text-destructive">
-                              {formatCurrency(alert.variance)}
-                            </div>
-                            <span className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">
-                              {formatPercent(alert.variancePercent)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="divide-y divide-border/30 overflow-y-auto h-full">
+                  {alerts.map((alert) => (
+                    <div
+                      key={alert.activityId}
+                      className="p-4 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {alert.activityTitle}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {alert.activitySn}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-red-600">
+                            {formatCurrency(alert.variance)}
+                          </p>
+                          <p className="text-xs text-red-600/80">
+                            {formatPercent(alert.variancePercent)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

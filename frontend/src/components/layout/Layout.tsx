@@ -1,10 +1,10 @@
-import { ReactNode } from 'react';
-import { useAuthStore } from '@/stores/authStore';
-import { useUIStore } from '@/stores/uiStore';
-import { Sidebar } from '../navigation/Sidebar';
-import { ErrorTrigger } from '../dev/ErrorTrigger';
-import { Header } from './Header';
-import { cn } from '@/lib/utils';
+import { ReactNode } from "react";
+import { useRouterState } from "@tanstack/react-router";
+import { useAuthStore } from "@/stores/authStore";
+import { useUIStore } from "@/stores/uiStore";
+import { Sidebar } from "../navigation/Sidebar";
+import { Header } from "./Header";
+import { cn } from "@/lib/utils";
 
 interface LayoutProps {
   children: ReactNode;
@@ -13,8 +13,10 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const user = useAuthStore((state) => state.user);
   const sidebarCollapsed = useUIStore((state) => state.sidebarCollapsed);
+  const { location } = useRouterState();
+  const isLoginPage = location.pathname === "/login";
 
-  if (!user) {
+  if (!user || isLoginPage) {
     return <>{children}</>;
   }
 
@@ -33,16 +35,13 @@ export function Layout({ children }: LayoutProps) {
       {/* Main content */}
       <main
         className={cn(
-          'min-h-screen transition-all duration-300 ease-in-out',
-          'lg:ml-64',
-          sidebarCollapsed && 'lg:ml-20'
+          "min-h-screen transition-all duration-300 ease-in-out",
+          "lg:ml-64",
+          sidebarCollapsed && "lg:ml-20",
         )}
       >
         {children}
       </main>
-
-      {/* Development tools */}
-      <ErrorTrigger />
     </div>
   );
 }

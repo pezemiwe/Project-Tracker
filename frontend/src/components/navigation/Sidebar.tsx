@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 import {
   LayoutDashboard,
   Target,
@@ -12,14 +12,16 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-} from 'lucide-react';
-import { useAuthStore, UserRole } from '@/stores/authStore';
-import { useUIStore } from '@/stores/uiStore';
-import { useLogout } from '@/hooks/useAuth';
-import { NavItem } from './NavItem';
-import { RoleBadge } from './RoleBadge';
-import { ThemeToggle } from '../ui/theme-toggle';
-import { cn } from '@/lib/utils';
+  Moon,
+  Sun,
+} from "lucide-react";
+import { useAuthStore, UserRole } from "@/stores/authStore";
+import { useUIStore } from "@/stores/uiStore";
+import { useLogout } from "@/hooks/useAuth";
+import { useTheme } from "@/contexts/ThemeContext";
+import { NavItem } from "./NavItem";
+import { ThemeToggle } from "../ui/theme-toggle";
+import { cn } from "@/lib/utils";
 
 interface NavRoute {
   to: string;
@@ -30,59 +32,60 @@ interface NavRoute {
 
 const routes: NavRoute[] = [
   {
-    to: '/',
+    to: "/",
     icon: LayoutDashboard,
-    label: 'Dashboard',
+    label: "Dashboard",
   },
   {
-    to: '/objectives',
+    to: "/objectives",
     icon: Target,
-    label: 'Objectives',
+    label: "Objectives",
   },
   {
-    to: '/activities',
+    to: "/activities",
     icon: Activity,
-    label: 'Activities',
+    label: "Activities",
   },
   {
-    to: '/spend-analysis',
+    to: "/spend-analysis",
     icon: BarChart3,
-    label: 'Spend Analysis',
+    label: "Spend Analysis",
   },
   {
-    to: '/approvals',
+    to: "/approvals",
     icon: CheckCircle,
-    label: 'Approvals',
+    label: "Approvals",
   },
   {
-    to: '/users',
+    to: "/users",
     icon: Users,
-    label: 'Users',
-    allowedRoles: ['Admin'],
+    label: "Users",
+    allowedRoles: ["Admin"],
   },
   {
-    to: '/audit',
+    to: "/audit",
     icon: FileText,
-    label: 'Audit',
-    allowedRoles: ['Admin', 'Auditor'],
+    label: "Audit",
+    allowedRoles: ["Admin", "Auditor"],
   },
   {
-    to: '/import-export',
+    to: "/import-export",
     icon: Upload,
-    label: 'Import/Export',
-    allowedRoles: ['Admin'],
+    label: "Import/Export",
+    allowedRoles: ["Admin"],
   },
   {
-    to: '/settings',
+    to: "/settings",
     icon: Settings,
-    label: 'Settings',
-    allowedRoles: ['Admin'],
+    label: "Settings",
+    allowedRoles: ["Admin"],
   },
 ];
 
 export function Sidebar() {
   const user = useAuthStore((state) => state.user);
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
+  const { theme } = useTheme();
   const { mutate: logout } = useLogout();
   const navRef = useRef<HTMLElement>(null);
 
@@ -93,38 +96,43 @@ export function Sidebar() {
     return route.allowedRoles.includes(user.role);
   });
 
-  // Arrow key navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!navRef.current) return;
 
       const links = Array.from(
-        navRef.current.querySelectorAll<HTMLAnchorElement>('a[role="menuitem"]')
+        navRef.current.querySelectorAll<HTMLAnchorElement>(
+          'a[role="menuitem"]',
+        ),
       );
 
       if (links.length === 0) return;
 
-      const currentIndex = links.findIndex((link) => link === document.activeElement);
+      const currentIndex = links.findIndex(
+        (link) => link === document.activeElement,
+      );
 
       switch (e.key) {
-        case 'ArrowDown':
+        case "ArrowDown":
           e.preventDefault();
-          const nextIndex = currentIndex < links.length - 1 ? currentIndex + 1 : 0;
+          const nextIndex =
+            currentIndex < links.length - 1 ? currentIndex + 1 : 0;
           links[nextIndex]?.focus();
           break;
 
-        case 'ArrowUp':
+        case "ArrowUp":
           e.preventDefault();
-          const prevIndex = currentIndex > 0 ? currentIndex - 1 : links.length - 1;
+          const prevIndex =
+            currentIndex > 0 ? currentIndex - 1 : links.length - 1;
           links[prevIndex]?.focus();
           break;
 
-        case 'Home':
+        case "Home":
           e.preventDefault();
           links[0]?.focus();
           break;
 
-        case 'End':
+        case "End":
           e.preventDefault();
           links[links.length - 1]?.focus();
           break;
@@ -132,10 +140,10 @@ export function Sidebar() {
     };
 
     const nav = navRef.current;
-    nav?.addEventListener('keydown', handleKeyDown);
+    nav?.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      nav?.removeEventListener('keydown', handleKeyDown);
+      nav?.removeEventListener("keydown", handleKeyDown);
     };
   }, [filteredRoutes.length]);
 
@@ -144,119 +152,127 @@ export function Sidebar() {
       role="navigation"
       aria-label="Main navigation sidebar"
       className={cn(
-        'fixed left-0 top-0 h-screen bg-background border-r border-border/40 transition-all duration-300 ease-in-out z-40',
-        'flex flex-col',
-        sidebarCollapsed ? 'w-20' : 'w-64'
+        "group/sidebar fixed left-0 top-0 h-screen transition-all duration-300 ease-in-out z-40",
+        "flex flex-col",
+        "bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800",
+        sidebarCollapsed ? "w-20" : "w-64",
       )}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 h-14 border-b border-border/40">
-        {!sidebarCollapsed && (
-          <div className="flex flex-col gap-1 animate-fade-in">
-            <h1 className="font-semibold text-lg text-foreground tracking-tight">
-              Oversight Platform
-            </h1>
-          </div>
-        )}
-        <button
-          onClick={toggleSidebar}
-          className={cn(
-            'p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-            sidebarCollapsed && 'mx-auto'
-          )}
-          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {sidebarCollapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
-        </button>
-      </div>
-
-      {/* User Info */}
-      <section
-        className="p-4 border-b border-border/40"
-        aria-label="User information"
-      >
-        {sidebarCollapsed ? (
-          <div className="flex justify-center">
-            <div
-              className="w-9 h-9 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-medium text-sm shadow-sm"
-              role="img"
-              aria-label={`${user.fullName} avatar`}
-            >
-              {user.fullName.charAt(0)}
+      <div className="px-6 py-6 transition-all duration-300 bg-[#1a365d]/5 dark:bg-[#1a365d]/10">
+        {!sidebarCollapsed ? (
+          <div className="flex items-center gap-3 animate-fade-in">
+            <div className="w-9 h-9 rounded-lg bg-[#1a365d] dark:bg-[#1a365d] flex items-center justify-center">
+              <Target className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
+            <span className="font-bold text-xl text-slate-900 dark:text-white tracking-tight">
+              OVERSIGHT
+            </span>
           </div>
         ) : (
-          <div className="flex items-center gap-3 animate-fade-in">
-            <div
-              className="w-9 h-9 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-medium text-sm shadow-sm flex-shrink-0"
-              role="img"
-              aria-label={`${user.fullName} avatar`}
-            >
-              {user.fullName.charAt(0)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {user.fullName}
-              </p>
-              <RoleBadge role={user.role} className="mt-1" />
+          <div className="flex justify-center">
+            <div className="w-9 h-9 rounded-lg bg-[#1a365d] dark:bg-[#1a365d] flex items-center justify-center">
+              <Target className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
           </div>
         )}
-      </section>
+      </div>
 
-      {/* Navigation */}
       <nav
         ref={navRef}
-        className="flex-1 overflow-y-auto py-4 px-2"
+        className="flex-1 overflow-y-auto py-2 px-3"
         role="menu"
         aria-label="Primary navigation menu"
       >
         <div className="space-y-1">
           {filteredRoutes.map((route, index) => (
-            <div
+            <NavItem
               key={route.to}
-            >
-              <NavItem
-                to={route.to}
-                icon={route.icon}
-                label={route.label}
-                collapsed={sidebarCollapsed}
-                index={index}
-              />
-            </div>
+              to={route.to}
+              icon={route.icon}
+              label={route.label}
+              collapsed={sidebarCollapsed}
+              index={index}
+            />
           ))}
         </div>
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-border/40 space-y-4">
+      <div className="relative p-4 border-t border-[#1a365d]/20 dark:border-[#1a365d]/30 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col gap-4">
         <button
-          onClick={() => logout()}
+          onClick={toggleSidebar}
           className={cn(
-            'flex items-center w-full p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-destructive transition-colors group',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-            sidebarCollapsed ? 'justify-center' : 'gap-3'
+            "absolute -right-3 -top-3 z-50",
+            "h-6 w-6 flex items-center justify-center",
+            "bg-[#1a365d] dark:bg-[#1a365d] text-white",
+            "border border-[#1a365d] dark:border-[#1a365d]",
+            "rounded-full shadow-sm",
+            "transition-all duration-300",
+            "opacity-0 group-hover/sidebar:opacity-100 focus-visible:opacity-100",
+            "hover:bg-[#059669] dark:hover:bg-[#059669]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#059669]",
           )}
-          aria-label="Log out"
-          title="Log out"
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <LogOut className="w-5 h-5 group-hover:text-destructive transition-colors" />
-          {!sidebarCollapsed && (
-            <span className="font-medium animate-fade-in">Log out</span>
+          {sidebarCollapsed ? (
+            <ChevronRight className="w-3.5 h-3.5" />
+          ) : (
+            <ChevronLeft className="w-3.5 h-3.5" />
           )}
         </button>
 
-        <div className={cn('flex items-center', sidebarCollapsed ? 'justify-center' : 'justify-between')}>
-          <ThemeToggle />
+        <div
+          className={cn(
+            "flex items-center rounded-lg p-2 -m-2",
+            "hover:bg-[#1a365d]/5 dark:hover:bg-[#1a365d]/10 transition-colors",
+            sidebarCollapsed ? "justify-center" : "justify-between",
+          )}
+        >
           {!sidebarCollapsed && (
-            <div className="text-xs text-muted-foreground animate-fade-in font-mono">
-              v1.0.0
+            <div className="flex items-center gap-2 text-[#1a365d] dark:text-[#1a365d]/80">
+              {theme === "dark" ? (
+                <Moon className="w-4 h-4" />
+              ) : (
+                <Sun className="w-4 h-4" />
+              )}
+              <span className="text-sm font-medium">
+                {theme === "dark" ? "Dark Mode" : "Light Mode"}
+              </span>
             </div>
+          )}
+          <ThemeToggle />
+        </div>
+
+        <div
+          className={cn(
+            "flex items-center",
+            sidebarCollapsed ? "justify-center" : "gap-3",
+          )}
+        >
+          <div className="relative shrink-0">
+            <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-semibold text-sm text-slate-700 dark:text-slate-200">
+              {user.fullName.charAt(0)}
+            </div>
+            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
+          </div>
+
+          {!sidebarCollapsed && (
+            <>
+              <div className="flex-1 min-w-0 flex flex-col">
+                <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                  {user.fullName}
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  {user.email}
+                </span>
+              </div>
+              <button
+                onClick={() => logout()}
+                className="p-1.5 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
       </div>

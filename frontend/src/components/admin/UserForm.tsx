@@ -1,26 +1,41 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Select } from '../ui/select';
-import { FormField } from '../ui/form-field';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { useCreateUser, CreateUserData } from '../../hooks/useUsers';
-import { UserRole } from '../../stores/authStore';
-import { toast } from '../../hooks/useToast';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Select } from "../ui/select";
+import { FormField } from "../ui/form-field";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
+import { useCreateUser } from "../../hooks/useUsers";
+import { toast } from "../../hooks/useToast";
 
 const userSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  fullName: z.string().min(1, 'Full name is required'),
-  role: z.enum(['Admin', 'ProjectManager', 'Finance', 'CommitteeMember', 'Auditor', 'Viewer']),
+  email: z.string().email("Invalid email address"),
+  fullName: z.string().min(1, "Full name is required"),
+  role: z.enum([
+    "Admin",
+    "ProjectManager",
+    "Finance",
+    "CommitteeMember",
+    "Auditor",
+    "Viewer",
+  ]),
   temporaryPassword: z
     .string()
-    .min(12, 'Password must be at least 12 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one digit')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+    .min(12, "Password must be at least 12 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one digit")
+    .regex(
+      /[^A-Za-z0-9]/,
+      "Password must contain at least one special character",
+    ),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
@@ -54,7 +69,8 @@ export function UserForm({ onClose }: UserFormProps) {
         toast({
           variant: "error",
           title: "CREATION FAILED",
-          description: error.message || 'Failed to create user. Please try again.',
+          description:
+            error.message || "Failed to create user. Please try again.",
         });
       },
     });
@@ -77,7 +93,7 @@ export function UserForm({ onClose }: UserFormProps) {
             <Input
               id="fullName"
               placeholder="John Doe"
-              {...register('fullName')}
+              {...register("fullName")}
               disabled={isPending}
               error={errors.fullName?.message}
             />
@@ -93,7 +109,7 @@ export function UserForm({ onClose }: UserFormProps) {
               id="email"
               type="email"
               placeholder="john@example.org"
-              {...register('email')}
+              {...register("email")}
               disabled={isPending}
               error={errors.email?.message}
             />
@@ -107,7 +123,7 @@ export function UserForm({ onClose }: UserFormProps) {
           >
             <Select
               id="role"
-              {...register('role')}
+              {...register("role")}
               disabled={isPending}
               error={errors.role?.message}
             >
@@ -132,7 +148,7 @@ export function UserForm({ onClose }: UserFormProps) {
               id="temporaryPassword"
               type="password"
               placeholder="Enter secure password"
-              {...register('temporaryPassword')}
+              {...register("temporaryPassword")}
               disabled={isPending}
               error={errors.temporaryPassword?.message}
             />
@@ -140,9 +156,14 @@ export function UserForm({ onClose }: UserFormProps) {
 
           <div className="flex gap-2">
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Creating...' : 'Create User'}
+              {isPending ? "Creating..." : "Create User"}
             </Button>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isPending}
+            >
               Cancel
             </Button>
           </div>
